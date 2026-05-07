@@ -1,0 +1,633 @@
+-- // FarmScript.lua
+-- // Fluent UI: https://github.com/dawid-scripts/Fluent
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Dont Steal From Base",
+    SubTitle = "By Oorbits",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(600, 480),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.RightControl,
+})
+
+-- ──────────────────────────────────────────────
+-- Services & References
+-- ──────────────────────────────────────────────
+local Players           = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer       = Players.LocalPlayer
+
+local function getHRP()
+    local char = LocalPlayer.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function tpTo(cframe)
+    local hrp = getHRP()
+    if hrp then
+        hrp.CFrame = cframe + Vector3.new(0, 4, 0)
+    end
+end
+
+local function tpToPlot()
+    local plot = workspace:FindFirstChild("Plot_" .. LocalPlayer.Name)
+    if plot then
+        local part = plot:FindFirstChildWhichIsA("BasePart", true)
+        tpTo(part and part.CFrame or plot:GetPivot())
+    end
+end
+
+-- ──────────────────────────────────────────────
+-- Tabs
+-- ──────────────────────────────────────────────
+local Tabs = {
+    Farm     = Window:AddTab({ Title = "Farm",     Icon = "sprout"    }),
+    Upgrades = Window:AddTab({ Title = "Upgrades", Icon = "arrow-up"  }),
+    Collect  = Window:AddTab({ Title = "Collect",  Icon = "package"   }),
+    Rebirth  = Window:AddTab({ Title = "Rebirth",  Icon = "refresh-cw"}),
+    Spin     = Window:AddTab({ Title = "Spin",     Icon = "rotate-cw" }),
+    Advance  = Window:AddTab({ Title = "Advance",  Icon = "zap"       }),
+}
+
+-- ══════════════════════════════════════════════
+-- TAB: FARM
+-- ══════════════════════════════════════════════
+
+Tabs.Farm:AddButton({
+    Title       = "Delete All Lasers",
+    Description = "Removes all lasers",
+    Callback    = function()
+        local removed = 0
+        for i = 1, 8 do
+            local base = workspace.Bases:FindFirstChild("Base" .. i)
+            if base then
+                local lasers = base:FindFirstChild("Lasers")
+                if lasers then
+                    for _, v in ipairs(lasers:GetChildren()) do
+                        v:Destroy()
+                        removed += 1
+                    end
+                end
+            end
+        end
+        Fluent:Notify({ Title = "Lasers Deleted", Content = "Removed " .. removed .. " laser(s).", Duration = 3 })
+    end,
+})
+
+Tabs.Farm:AddButton({
+    Title       = "Delete All Guards",
+    Description = "Destroys all guards ezzz",
+    Callback    = function()
+        local removed = 0
+        local localNPCs = workspace:FindFirstChild("LocalNPCs")
+        if localNPCs then
+            for i = 1, 8 do
+                local guard = localNPCs:FindFirstChild("LocalGuard_Base" .. i)
+                if guard then
+                    guard:Destroy()
+                    removed += 1
+                end
+            end
+        end
+        Fluent:Notify({ Title = "Guards Deleted", Content = "Removed " .. removed .. " guard(s).", Duration = 3 })
+    end,
+})
+
+Tabs.Farm:AddParagraph({
+    Title   = "Auto Farm",
+    Content = "Set your filters then enable the toggle below.",
+})
+
+local selectedRarities = {}
+local RarityDropdown = Tabs.Farm:AddDropdown("RarityFilter", {
+    Title       = "Rarity Filter",
+    Description = "Farm items matching these rarities (empty = farm all)",
+    Values      = { "Rarity", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical", "Secret", "Godly", "Exclusive" },
+    Multi       = true,
+    Default     = {},
+})
+RarityDropdown:OnChanged(function(value)
+    selectedRarities = value
+end)
+
+local selectedMutations = {}
+local MutationDropdown = Tabs.Farm:AddDropdown("MutationFilter", {
+    Title       = "Mutation Filter",
+    Description = "Farm items matching these mutations (empty = farm all)",
+    Values      = { "Normal", "Golden", "Diamond", "Ruby", "Neon" },
+    Multi       = true,
+    Default     = {},
+})
+MutationDropdown:OnChanged(function(value)
+    selectedMutations = value
+end)
+
+local autoFarmEnabled = false
+
+local function rarityOk(rarity)
+    if not next(selectedRarities) then return true end
+    return selectedRarities[tostring(rarity)] == true
+end
+
+local function mutationOk(mutation)
+    if not next(selectedMutations) then return true end
+    return selectedMutations[tostring(mutation)] == true
+end
+
+local function doFarmCycle()
+    for baseIndex = 1, 8 do
+        if not autoFarmEnabled then break end
+        local base = workspace.Bases:FindFirstChild("Base" .. baseIndex)
+        if base then
+            local slots = base:FindFirstChild("Slots")
+            if slots then
+                for slotIndex = 1, 10 do
+                    if not autoFarmEnabled then break end
+                    local slot = slots:FindFirstChild("Slot" .. slotIndex)
+                    if slot then
+                        local spawn = slot:FindFirstChild("Spawn")
+                        if spawn then
+                            local spawnedItem = spawn:FindFirstChild("SpawnedItem")
+                            if spawnedItem then
+                                local rarity   = spawnedItem:GetAttribute("Rarity")
+                                local mutation = spawnedItem:GetAttribute("Mutation")
+                                if rarityOk(rarity) and mutationOk(mutation) then
+                                    local part = spawnedItem:FindFirstChild("Part") or spawnedItem:FindFirstChild("Handle")
+                                    if part then
+                                        local prox = part:FindFirstChild("ProximityPrompt")
+                                        if prox then
+                                            tpTo(part.CFrame)
+                                            task.wait(0.2)
+                                            fireproximityprompt(prox)
+                                            task.wait(0.2)
+                                            tpToPlot()
+                                            task.wait(0)
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    task.wait(0)
+                end
+            end
+        end
+    end
+end
+
+local function farmLoop()
+    while autoFarmEnabled do
+        local ok, err = pcall(doFarmCycle)
+        if not ok then warn("[Farm] " .. tostring(err)) end
+        task.wait(0)
+    end
+end
+
+local FarmToggle = Tabs.Farm:AddToggle("AutoFarmToggle", {
+    Title       = "Auto Farm",
+    Description = "Automatically collects items based on your filters",
+    Default     = false,
+})
+FarmToggle:OnChanged(function(state)
+    autoFarmEnabled = state
+    if state then
+        Fluent:Notify({ Title = "Auto Farm", Content = "Started! Scanning Base1–8, Slot1–10.", Duration = 2 })
+        task.spawn(farmLoop)
+    else
+        Fluent:Notify({ Title = "Auto Farm", Content = "Stopped.", Duration = 2 })
+    end
+end)
+
+-- ══════════════════════════════════════════════
+-- TAB: UPGRADES
+-- ══════════════════════════════════════════════
+
+Tabs.Upgrades:AddParagraph({
+    Title   = "Auto Upgrade",
+    Content = "Automatically upgrades every slot",
+})
+
+local autoUpgradeEnabled = false
+local RequestSlotUpgrade = ReplicatedStorage:WaitForChild("Events"):WaitForChild("RequestSlotUpgrade")
+
+local function doUpgradeCycle()
+    for floorIndex = 1, 8 do
+        if not autoUpgradeEnabled then break end
+        local floorName = "Floor" .. floorIndex
+        for slotIndex = 1, 10 do
+            if not autoUpgradeEnabled then break end
+            local slotName = "Slot" .. slotIndex
+            local ok, err = pcall(function()
+                RequestSlotUpgrade:FireServer(floorName, slotName)
+            end)
+            if not ok then
+                warn("[Upgrades] " .. floorName .. "/" .. slotName .. " – " .. tostring(err))
+            end
+            task.wait(0)
+        end
+        task.wait(0)
+    end
+end
+
+local function upgradeLoop()
+    while autoUpgradeEnabled do
+        local ok, err = pcall(doUpgradeCycle)
+        if not ok then warn("[Upgrades] Cycle error: " .. tostring(err)) end
+        task.wait(0)
+    end
+end
+
+local UpgradeToggle = Tabs.Upgrades:AddToggle("AutoUpgradeToggle", {
+    Title       = "Auto Upgrade All",
+    Description = "Upgrades all",
+    Default     = false,
+})
+UpgradeToggle:OnChanged(function(state)
+    autoUpgradeEnabled = state
+    if state then
+        Fluent:Notify({ Title = "Auto Upgrade", Content = "Started! Upgrading Floor1–8, Slot1–10.", Duration = 2 })
+        task.spawn(upgradeLoop)
+    else
+        Fluent:Notify({ Title = "Auto Upgrade", Content = "Stopped.", Duration = 2 })
+    end
+end)
+
+-- ══════════════════════════════════════════════
+-- TAB: COLLECT
+-- ══════════════════════════════════════════════
+
+Tabs.Collect:AddParagraph({
+    Title   = "Auto Collect",
+    Content = "Collect all ur income",
+})
+
+local autoCollectEnabled = false
+
+local function doCollectCycle()
+    local plot = workspace:FindFirstChild("Plot_" .. LocalPlayer.Name)
+    if not plot then
+        warn("[Collect] Plot not found: Plot_" .. LocalPlayer.Name)
+        return
+    end
+    local hrp = getHRP()
+    if not hrp then return end
+
+    for floorIndex = 1, 8 do
+        if not autoCollectEnabled then break end
+        local floorName = "Floor" .. floorIndex
+        local floor = plot:FindFirstChild(floorName)
+        if not floor then continue end
+        local slots = floor:FindFirstChild("Slots")
+        if not slots then continue end
+        local anyPart = floor:FindFirstChildWhichIsA("BasePart", true)
+        if anyPart then
+            tpTo(anyPart.CFrame)
+            task.wait(0)
+        end
+        for slotIndex = 1, 10 do
+            if not autoCollectEnabled then break end
+            local slot = slots:FindFirstChild("Slot" .. slotIndex)
+            if not slot then continue end
+            local collectButton = slot:FindFirstChild("CollectButton")
+            if not collectButton then continue end
+            local part = collectButton:FindFirstChild("Part")
+            if not part then continue end
+            local touchInterest = part:FindFirstChild("TouchInterest")
+            if not touchInterest then continue end
+            local ok, err = pcall(function()
+                firetouchinterest(part, hrp, 0)
+                task.wait(0)
+                firetouchinterest(part, hrp, 1)
+            end)
+            if not ok then
+                warn("[Collect] Floor" .. floorIndex .. "/Slot" .. slotIndex .. " – " .. tostring(err))
+            end
+            task.wait(0)
+        end
+        task.wait(0)
+    end
+end
+
+local function collectLoop()
+    while autoCollectEnabled do
+        local ok, err = pcall(doCollectCycle)
+        if not ok then warn("[Collect] Cycle error: " .. tostring(err)) end
+        task.wait(0)
+    end
+end
+
+local CollectToggle = Tabs.Collect:AddToggle("AutoCollectToggle", {
+    Title       = "Auto Collect",
+    Description = "Collect all",
+    Default     = false,
+})
+CollectToggle:OnChanged(function(state)
+    autoCollectEnabled = state
+    if state then
+        Fluent:Notify({ Title = "Auto Collect", Content = "Started! Collecting Floor1–8, Slot1–10.", Duration = 2 })
+        task.spawn(collectLoop)
+    else
+        Fluent:Notify({ Title = "Auto Collect", Content = "Stopped.", Duration = 2 })
+    end
+end)
+
+-- ══════════════════════════════════════════════
+-- TAB: REBIRTH
+-- ══════════════════════════════════════════════
+
+Tabs.Rebirth:AddParagraph({
+    Title   = "Auto Rebirth",
+    Content = "Automatically fires rebirth request in a loop.",
+})
+
+local autoRebirthEnabled = false
+local RequestRebirth = ReplicatedStorage:WaitForChild("Events"):WaitForChild("RequestRebirth")
+
+local function rebirthLoop()
+    while autoRebirthEnabled do
+        local ok, err = pcall(function()
+            RequestRebirth:FireServer()
+        end)
+        if not ok then warn("[Rebirth] " .. tostring(err)) end
+        task.wait(1)
+    end
+end
+
+local RebirthToggle = Tabs.Rebirth:AddToggle("AutoRebirthToggle", {
+    Title       = "Auto Rebirth",
+    Description = "Loops rebirth request every second",
+    Default     = false,
+})
+RebirthToggle:OnChanged(function(state)
+    autoRebirthEnabled = state
+    if state then
+        Fluent:Notify({ Title = "Auto Rebirth", Content = "Started!", Duration = 2 })
+        task.spawn(rebirthLoop)
+    else
+        Fluent:Notify({ Title = "Auto Rebirth", Content = "Stopped.", Duration = 2 })
+    end
+end)
+
+-- ══════════════════════════════════════════════
+-- TAB: SPIN
+-- ══════════════════════════════════════════════
+
+Tabs.Spin:AddParagraph({
+    Title   = "Auto Spin",
+    Content = "Automatically spins in a loop.",
+})
+
+local autoSpinEnabled = false
+local SpinAction = ReplicatedStorage:WaitForChild("Events"):WaitForChild("SpinAction")
+
+local function spinLoop()
+    while autoSpinEnabled do
+        local ok, err = pcall(function()
+            SpinAction:FireServer("Request")
+        end)
+        if not ok then warn("[Spin] " .. tostring(err)) end
+        task.wait(1)
+    end
+end
+
+local SpinToggle = Tabs.Spin:AddToggle("AutoSpinToggle", {
+    Title       = "Auto Spin",
+    Description = "Loops spin request every second",
+    Default     = false,
+})
+SpinToggle:OnChanged(function(state)
+    autoSpinEnabled = state
+    if state then
+        Fluent:Notify({ Title = "Auto Spin", Content = "Started!", Duration = 2 })
+        task.spawn(spinLoop)
+    else
+        Fluent:Notify({ Title = "Auto Spin", Content = "Stopped.", Duration = 2 })
+    end
+end)
+
+-- ══════════════════════════════════════════════
+-- TAB: ADVANCE
+-- ══════════════════════════════════════════════
+
+Tabs.Advance:AddParagraph({
+    Title   = "Auto EXP via Trade",
+    Content = "Select a player, enter the pet name, then enable the toggle.",
+})
+
+-- ── Player Dropdown (live server list) ──
+local function getPlayerNames()
+    local names = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(names, p.Name)
+        end
+    end
+    if #names == 0 then table.insert(names, "No players found") end
+    return names
+end
+
+local selectedTradeTarget = nil
+local playerNames = getPlayerNames()
+
+local TradePlayerDropdown = Tabs.Advance:AddDropdown("TradePlayerDropdown", {
+    Title       = "Target Player",
+    Description = "Select who to send the trade request to",
+    Values      = playerNames,
+    Multi       = false,
+    Default     = playerNames[1],
+})
+TradePlayerDropdown:OnChanged(function(value)
+    selectedTradeTarget = value
+end)
+selectedTradeTarget = playerNames[1]
+
+-- Refresh player list button
+Tabs.Advance:AddButton({
+    Title       = "Refresh Player List",
+    Description = "Re-scans the server for players",
+    Callback    = function()
+        local fresh = getPlayerNames()
+        TradePlayerDropdown:SetValues(fresh)
+        selectedTradeTarget = fresh[1]
+        Fluent:Notify({ Title = "Player List", Content = "Refreshed! Found " .. #fresh .. " player(s).", Duration = 2 })
+    end,
+})
+
+-- ── Pet Name Textbox ──
+local tradePetName = "Ballerina Cappuccina"
+local PetNameInput = Tabs.Advance:AddInput("TradePetName", {
+    Title       = "Pet Name",
+    Description = "Name of the pet to offer in the trade",
+    Default     = tradePetName,
+    Placeholder = "e.g. Ballerina Cappuccina",
+    Numeric     = false,
+})
+PetNameInput:OnChanged(function(value)
+    tradePetName = value
+end)
+
+-- ── Rarity / Mutation / Level inputs for the trade offer ──
+local tradeRarity   = "Uncommon"
+local tradeMutation = "Normal"
+local tradeLevel    = 1
+
+local TradeRarityInput = Tabs.Advance:AddInput("TradeRarity", {
+    Title       = "Pet Rarity",
+    Description = "Rarity of the pet to offer",
+    Default     = tradeRarity,
+    Placeholder = "e.g. Uncommon",
+    Numeric     = false,
+})
+TradeRarityInput:OnChanged(function(v) tradeRarity = v end)
+
+local TradeMutationInput = Tabs.Advance:AddInput("TradeMutation", {
+    Title       = "Pet Mutation",
+    Description = "Mutation of the pet to offer",
+    Default     = tradeMutation,
+    Placeholder = "e.g. Normal",
+    Numeric     = false,
+})
+TradeMutationInput:OnChanged(function(v) tradeMutation = v end)
+
+local TradeLevelInput = Tabs.Advance:AddInput("TradeLevel", {
+    Title       = "Pet Level",
+    Description = "Level of the pet to offer",
+    Default     = tostring(tradeLevel),
+    Placeholder = "e.g. 1",
+    Numeric     = true,
+})
+TradeLevelInput:OnChanged(function(v) tradeLevel = tonumber(v) or 1 end)
+
+-- ── Events ──
+local SendTradeRequest  = ReplicatedStorage:WaitForChild("Events"):WaitForChild("SendTradeRequest")
+local UpdateTradeOffer  = ReplicatedStorage:WaitForChild("Events"):WaitForChild("UpdateTradeOffer")
+local ToggleTradeAccept = ReplicatedStorage:WaitForChild("Events"):WaitForChild("ToggleTradeAccept")
+
+-- ── Auto EXP Loop ──
+local autoExpEnabled = false
+
+local TeleportService = game:GetService("TeleportService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Function to run the stress test payload
+local function runPayload()
+    local payload = "\255"
+    print("STARTING SYSTEM STRESS TEST (Single Pass)...")
+
+    for _, v in ipairs(ReplicatedStorage:GetDescendants()) do
+        if v:IsA("RemoteEvent") then
+            pcall(function()
+                v:FireServer(payload, payload, payload)
+            end)
+            print("Tested RemoteEvent: " .. v.Name)
+            
+        elseif v:IsA("RemoteFunction") then
+            task.spawn(function()
+                local success, result = pcall(function() 
+                    return v:InvokeServer(payload, payload, payload) 
+                end)
+                if not success then
+                    warn("RemoteFunction " .. v.Name .. " failed safely: " .. tostring(result))
+                end
+            end)
+        end
+    end
+    print("STRESS TEST COMPLETE.")
+end
+
+-- Function to handle rejoining the same server
+local function rejoin()
+    if #Players:GetPlayers() <= 1 then
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+    else
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end
+end
+
+local function doExpCycle()
+    local target = Players:FindFirstChild(selectedTradeTarget)
+    if not target then
+        warn("[AutoExp] Target player not found: " .. tostring(selectedTradeTarget))
+        return
+    end
+
+    -- 1. Send trade request
+    local ok1, err1 = pcall(function()
+        SendTradeRequest:InvokeServer(target)
+    end)
+    if not ok1 then warn("[AutoExp] SendTradeRequest failed: " .. tostring(err1)) return end
+    task.wait(1)
+
+    -- 2. Update trade offer
+    local ok2, err2 = pcall(function()
+        UpdateTradeOffer:InvokeServer({
+            {
+                {
+                    Rarity   = tradeRarity,
+                    Level    = tradeLevel,
+                    Name     = tradePetName,
+                    Mutation = tradeMutation,
+                }
+            }
+        })
+    end)
+    if not ok2 then warn("[AutoExp] UpdateTradeOffer failed: " .. tostring(err2)) return end
+    task.wait(1)
+
+    -- 3. Accept the trade
+    local ok3, err3 = pcall(function()
+        ToggleTradeAccept:FireServer()
+    end)
+    if not ok3 then warn("[AutoExp] ToggleTradeAccept failed: " .. tostring(err3)) end
+
+    -- NEW FEATURE: Wait 7 seconds, Run Payload, then Rejoin
+    print("[AutoExp] Trade accepted. Waiting 7 seconds before stress test...")
+    task.wait(7)
+    
+    runPayload()
+    
+    task.wait(1) -- Short buffer to ensure remotes fire before teleporting
+    print("[AutoExp] Rejoining...")
+    rejoin()
+end
+
+local function expLoop()
+    while autoExpEnabled do
+        local ok, err = pcall(doExpCycle)
+        if not ok then 
+            warn("[AutoExp] Cycle error: " .. tostring(err)) 
+        end
+        task.wait(2)
+    end
+end
+
+local AutoExpToggle = Tabs.Advance:AddToggle("AutoExpToggle", {
+    Title       = "Auto EXP",
+    Description = "Loops trade request → offer → accept",
+    Default     = false,
+})
+AutoExpToggle:OnChanged(function(state)
+    autoExpEnabled = state
+    if state then
+        Fluent:Notify({ Title = "Auto EXP", Content = "Started! Trading with " .. tostring(selectedTradeTarget), Duration = 2 })
+        task.spawn(expLoop)
+    else
+        Fluent:Notify({ Title = "Auto EXP", Content = "Stopped.", Duration = 2 })
+    end
+end)
+
+-- ──────────────────────────────────────────────
+-- Init
+-- ──────────────────────────────────────────────
+Window:SelectTab(1)
+
+Fluent:Notify({
+    Title    = "Script Loaded",
+    Content  = "Farm Script ready! Right Ctrl to minimize.",
+    Duration = 4,
+})
