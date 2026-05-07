@@ -61,7 +61,7 @@ Tabs.Farm:AddButton({
     Description = "Removes all lasers",
     Callback    = function()
         local removed = 0
-        for i = 1, 8 do
+        for i = 1, 20 do
             local base = workspace.Bases:FindFirstChild("Base" .. i)
             if base then
                 local lasers = base:FindFirstChild("Lasers")
@@ -84,7 +84,7 @@ Tabs.Farm:AddButton({
         local removed = 0
         local localNPCs = workspace:FindFirstChild("LocalNPCs")
         if localNPCs then
-            for i = 1, 8 do
+            for i = 1, 20 do
                 local guard = localNPCs:FindFirstChild("LocalGuard_Base" .. i)
                 if guard then
                     guard:Destroy()
@@ -138,7 +138,7 @@ local function mutationOk(mutation)
 end
 
 local function doFarmCycle()
-    for baseIndex = 1, 8 do
+    for baseIndex = 1, 20 do
         if not autoFarmEnabled then break end
         local base = workspace.Bases:FindFirstChild("Base" .. baseIndex)
         if base then
@@ -214,7 +214,7 @@ local autoUpgradeEnabled = false
 local RequestSlotUpgrade = ReplicatedStorage:WaitForChild("Events"):WaitForChild("RequestSlotUpgrade")
 
 local function doUpgradeCycle()
-    for floorIndex = 1, 8 do
+    for floorIndex = 1, 20 do
         if not autoUpgradeEnabled then break end
         local floorName = "Floor" .. floorIndex
         for slotIndex = 1, 10 do
@@ -275,7 +275,7 @@ local function doCollectCycle()
     local hrp = getHRP()
     if not hrp then return end
 
-    for floorIndex = 1, 8 do
+    for floorIndex = 1, 20 do
         if not autoCollectEnabled then break end
         local floorName = "Floor" .. floorIndex
         local floor = plot:FindFirstChild(floorName)
