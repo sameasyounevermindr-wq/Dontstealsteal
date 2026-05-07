@@ -105,7 +105,7 @@ local selectedRarities = {}
 local RarityDropdown = Tabs.Farm:AddDropdown("RarityFilter", {
     Title       = "Rarity Filter",
     Description = "Farm items matching these rarities (empty = farm all)",
-    Values      = { "Rarity", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical", "Secret", "Godly", "Exclusive" },
+    Values      = { "Rarity", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical", "Secret", "Godly", "Exclusive", "Celestial", "Divine", "Og", "Admin" },
     Multi       = true,
     Default     = {},
 })
