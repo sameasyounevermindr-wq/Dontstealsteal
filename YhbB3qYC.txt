@@ -154,27 +154,30 @@ local function doFarmCycle()
                             if spawnedItem then
                                 local rarity   = spawnedItem:GetAttribute("Rarity")
                                 local mutation = spawnedItem:GetAttribute("Mutation")
+                                
                                 if rarityOk(rarity) and mutationOk(mutation) then
-                                    local part = spawnedItem:FindFirstChild("Part") or spawnedItem:FindFirstChild("Handle") or spawnedItem:FindFirstChild("Mesh")
-                                    if part then
-                                        local prox = part:FindFirstChild("ProximityPrompt")
-                                        if prox then
-                                            tpTo(part.CFrame)
-                                            task.wait(0.2)
-                                            fireproximityprompt(prox)
-                                            task.wait(0.2)
-                                            tpToPlot()
-                                            task.wait(0)
-                                        end
+                                    -- Dynamically find the ProximityPrompt anywhere inside spawnedItem
+                                    local prox = spawnedItem:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                    
+                                    -- Ensure the prompt exists and is attached to a Part/MeshPart
+                                    if prox and prox.Parent:IsA("BasePart") then
+                                        local targetPart = prox.Parent
+                                        
+                                        tpTo(targetPart.CFrame)
+                                        task.wait(0.2)
+                                        fireproximityprompt(prox)
+                                        task.wait(0.2)
+                                        tpToPlot()
+                                        -- Removed task.wait(0) for faster execution; loop handles it
                                     end
                                 end
                             end
                         end
                     end
-                    task.wait(0)
                 end
             end
         end
+        task.wait(0) -- Minimal yield to prevent frame drops
     end
 end
 
