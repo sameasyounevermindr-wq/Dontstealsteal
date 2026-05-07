@@ -155,7 +155,7 @@ local function doFarmCycle()
                                 local rarity   = spawnedItem:GetAttribute("Rarity")
                                 local mutation = spawnedItem:GetAttribute("Mutation")
                                 if rarityOk(rarity) and mutationOk(mutation) then
-                                    local part = spawnedItem:FindFirstChild("Part") or spawnedItem:FindFirstChild("Handle")
+                                    local part = spawnedItem:FindFirstChild("Part") or spawnedItem:FindFirstChild("Handle") or spawnedItem:FindFirstChild("Mesh")
                                     if part then
                                         local prox = part:FindFirstChild("ProximityPrompt")
                                         if prox then
