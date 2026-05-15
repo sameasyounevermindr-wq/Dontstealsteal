@@ -7,7 +7,7 @@ local lp = Players.LocalPlayer
 -- 1. SECURITY CONFIGURATION
 local TARGET_GAME_ID = 74951754415707
 local WHITELIST = {
-    ["YourUsernameHere"] = true, -- Replace with your actual username
+    ["NOOBTOPROASTD_5"] = true, -- Replace with your actual username
     ["Oorbits"] = true,          -- Your alias
 }
 
